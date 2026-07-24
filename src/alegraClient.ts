@@ -96,7 +96,7 @@ export class AlegraClient {
   /** Facturas de compra (proveedor) pendientes de pago para un contacto. */
   async getPendingBills(contactId: string): Promise<AlegraPendingDocument[]> {
     const { data } = await this.http.get("/bills", {
-      params: { client: contactId, status: "open" },
+      params: { client_id: contactId, status: "open" },
     });
     return (data as any[]).map((b) => ({
       id: String(b.id),
@@ -111,7 +111,7 @@ export class AlegraClient {
   /** Facturas de venta (cliente) pendientes de cobro para un contacto. */
   async getPendingInvoices(contactId: string): Promise<AlegraPendingDocument[]> {
     const { data } = await this.http.get("/invoices", {
-      params: { client: contactId, status: "open" },
+      params: { client_id: contactId, status: "open" },
     });
     return (data as any[]).map((inv) => ({
       id: String(inv.id),
