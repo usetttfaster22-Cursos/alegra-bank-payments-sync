@@ -40,6 +40,8 @@ function renderMovements(rows) {
   for (const row of rows) {
     const amount = row.direction === "debito" ? row.debito : row.credito;
     const tr = document.createElement("tr");
+    if (row.hasAlegraMatch) tr.className = "row-matched";
+    tr.title = row.hasAlegraMatch ? "Ya se detectó una factura abierta en Alegra que parece coincidir" : "";
     tr.innerHTML = `
       <td>${row.fecha}</td>
       <td>${row.descripcion ?? ""}</td>

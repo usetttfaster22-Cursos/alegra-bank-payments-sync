@@ -3,7 +3,7 @@ import multer from "multer";
 import { db, BankMovementRow } from "../db";
 import { parseBankStatement } from "../bankStatementParser";
 import { alegraClient } from "../alegraClient";
-import { suggestMatches } from "../matching";
+import { suggestMatches, hasStrongAlegraMatch } from "../matching";
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
 
@@ -39,7 +39,7 @@ movementsRouter.post("/import", upload.single("file"), (req, res) => {
   res.json({ total: parsed.length, inserted, duplicates: parsed.length - inserted });
 });
 
-movementsRouter.get("/", (req, res) => {
+movementsRouter.get("/", async (req, res) => {
   const status = typeof req.query.status === "string" ? req.query.status : undefined;
   const direction = typeof req.query.direction === "string" ? req.query.direction : undefined;
 
@@ -56,6 +56,21 @@ movementsRouter.get("/", (req, res) => {
   query += " ORDER BY fecha DESC, id DESC";
 
   const rows = db.prepare(query).all(params) as BankMovementRow[];
+
+  if (status === "pending" && (direction === "debito" || direction === "credito")) {
+    try {
+      const candidates = direction === "debito" ? await alegraClient.getAllOpenBills() : await alegraClient.getAllOpenInvoices();
+      const withMatch = rows.map((r) => {
+        const amount = direction === "debito" ? r.debito : r.credito;
+        const hasAlegraMatch = amount !== null && hasStrongAlegraMatch({ descripcion: r.descripcion, fecha: r.fecha, amount }, candidates);
+        return { ...r, hasAlegraMatch };
+      });
+      return res.json(withMatch);
+    } catch {
+      // Si falla la consulta a Alegra, seguimos mostrando los movimientos sin el resaltado.
+    }
+  }
+
   res.json(rows);
 });
 

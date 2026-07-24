@@ -101,6 +101,10 @@ export function suggestMatches(movement: MovementLike, candidates: AlegraOpenDoc
     .slice(0, 5);
 }
 
+function meetsStrongThreshold(s: MatchScore): boolean {
+  return [s.matchedByName, s.matchedByAmount, s.matchedByDate].filter(Boolean).length >= 2;
+}
+
 /**
  * Indica si una factura abierta de Alegra parece tener ya un movimiento bancario
  * pendiente que la paga (para resaltarla en la vista de Cuentas por Pagar/Cobrar).
@@ -108,9 +112,14 @@ export function suggestMatches(movement: MovementLike, candidates: AlegraOpenDoc
  * evitar falsos positivos.
  */
 export function findStrongBankMatch(doc: AlegraOpenDocument, movements: MovementLike[]): boolean {
-  return movements.some((m) => {
-    const s = scoreOne(m, doc);
-    const criteriaMet = [s.matchedByName, s.matchedByAmount, s.matchedByDate].filter(Boolean).length;
-    return criteriaMet >= 2;
-  });
+  return movements.some((m) => meetsStrongThreshold(scoreOne(m, doc)));
+}
+
+/**
+ * Indica si un movimiento bancario pendiente parece corresponder a alguna factura
+ * abierta de Alegra (para resaltarlo en la vista de Pendientes). Mismo umbral que
+ * findStrongBankMatch, visto desde el lado del movimiento.
+ */
+export function hasStrongAlegraMatch(movement: MovementLike, candidates: AlegraOpenDocument[]): boolean {
+  return candidates.some((doc) => meetsStrongThreshold(scoreOne(movement, doc)));
 }
