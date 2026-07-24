@@ -89,3 +89,4 @@ button.small { padding: 4px 10px; font-size: 13px; }
 .badge.pending { background: #fff3cd; color: #8a6100; }
 .badge.processed { background: #d3f4dd; color: #14683a; }
 .badge.ignored { background: #eee; color: #666; }
+.modal-backdrop[hidden] { display: none; }
