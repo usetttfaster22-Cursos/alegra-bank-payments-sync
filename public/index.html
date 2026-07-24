@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Alegra · Conciliación bancaria</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>Conciliación bancaria → Alegra</h1>
+    <p class="subtitle">Importa el extracto de Banco General y registra pagos a proveedores y cobros de clientes.</p>
+  </header>
+
+  <section class="panel">
+    <form id="import-form">
+      <label class="file-label">
+        <input type="file" id="file-input" accept=".xlsx,.xls" required />
+        <span>Seleccionar extracto (.xlsx)</span>
+      </label>
+      <button type="submit">Importar</button>
+      <span id="import-result" class="hint"></span>
+    </form>
+  </section>
+
+  <nav class="tabs">
+    <button class="tab active" data-status="pending" data-direction="debito">Pendientes · Proveedores</button>
+    <button class="tab" data-status="pending" data-direction="credito">Pendientes · Clientes</button>
+    <button class="tab" data-status="processed" data-direction="">Procesados</button>
+    <button class="tab" data-status="ignored" data-direction="">Ignorados</button>
+  </nav>
+
+  <section class="panel">
+    <table id="movements-table">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Descripción</th>
+          <th>Monto</th>
+          <th>Estado</th>
+          <th>Contacto Alegra</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="movements-body"></tbody>
+    </table>
+    <p id="empty-hint" class="hint" hidden>No hay movimientos en esta vista.</p>
+  </section>
+
+  <div id="modal-backdrop" class="modal-backdrop" hidden>
+    <div class="modal">
+      <button class="modal-close" id="modal-close">×</button>
+      <h2 id="modal-title">Procesar movimiento</h2>
+      <p id="modal-movement-desc" class="hint"></p>
+
+      <label>Buscar contacto en Alegra</label>
+      <input type="text" id="contact-search" placeholder="Nombre del proveedor o cliente..." />
+      <ul id="contact-results" class="results-list"></ul>
+      <p id="contact-selected" class="hint"></p>
+
+      <div id="documents-section" hidden>
+        <label>Facturas pendientes</label>
+        <table id="documents-table">
+          <thead>
+            <tr><th></th><th>Número</th><th>Fecha</th><th>Saldo</th><th>Monto a aplicar</th></tr>
+          </thead>
+          <tbody id="documents-body"></tbody>
+        </table>
+      </div>
+
+      <div class="form-grid">
+        <div>
+          <label>Cuenta bancaria</label>
+          <select id="bank-account-select"></select>
+        </div>
+        <div>
+          <label>Forma de pago</label>
+          <select id="payment-method-select">
+            <option value="transfer">Transferencia</option>
+            <option value="cash">Efectivo</option>
+            <option value="other">Otro</option>
+          </select>
+        </div>
+        <div>
+          <label>Moneda</label>
+          <select id="currency-select">
+            <option value="USD">USD</option>
+            <option value="PAB">PAB</option>
+          </select>
+        </div>
+        <div>
+          <label>Centro de costo</label>
+          <select id="cost-center-select"></select>
+        </div>
+      </div>
+
+      <label>Nota</label>
+      <input type="text" id="observations-input" placeholder="Opcional" />
+
+      <div class="modal-actions">
+        <button id="submit-match">Registrar en Alegra</button>
+        <span id="modal-error" class="error"></span>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

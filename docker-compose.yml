@@ -1,0 +1,11 @@
+services:
+  app:
+    build: .
+    container_name: alegra-bank-payments-sync
+    restart: unless-stopped
+    ports:
+      - "${HOST_PORT:-3000}:3000"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
