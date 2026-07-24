@@ -89,30 +89,30 @@ document.getElementById("movements-filter").addEventListener("input", (e) => {
   renderMovements(filtered);
 });
 
-async function loadAccountsPayable() {
-  const tbody = document.getElementById("ap-body");
-  const errorEl = document.getElementById("ap-error");
+async function loadOpenDocuments(endpoint, prefix) {
+  const tbody = document.getElementById(`${prefix}-body`);
+  const errorEl = document.getElementById(`${prefix}-error`);
   tbody.innerHTML = "";
   errorEl.textContent = "";
 
   let rows;
   try {
-    rows = await api("/api/alegra/bills-payable");
+    rows = await api(endpoint);
   } catch (err) {
     errorEl.textContent = err.message;
-    document.getElementById("ap-empty-hint").hidden = true;
-    document.getElementById("ap-total").textContent = "";
+    document.getElementById(`${prefix}-empty-hint`).hidden = true;
+    document.getElementById(`${prefix}-total`).textContent = "";
     return;
   }
 
-  document.getElementById("ap-empty-hint").hidden = rows.length > 0;
+  document.getElementById(`${prefix}-empty-hint`).hidden = rows.length > 0;
 
   let total = 0;
   for (const doc of rows) {
     total += doc.balance;
     const tr = document.createElement("tr");
     if (doc.hasBankMatch) tr.className = "row-matched";
-    tr.title = doc.hasBankMatch ? "Ya se detectó un movimiento bancario pendiente que parece pagar esta factura" : "";
+    tr.title = doc.hasBankMatch ? "Ya se detectó un movimiento bancario pendiente que parece coincidir con esta factura" : "";
     tr.innerHTML = `
       <td>${doc.contactName}</td>
       <td>${doc.numberTemplate ?? doc.id}</td>
@@ -123,23 +123,27 @@ async function loadAccountsPayable() {
     `;
     tbody.appendChild(tr);
   }
-  document.getElementById("ap-total").textContent = fmtMoney(total);
+  document.getElementById(`${prefix}-total`).textContent = fmtMoney(total);
 }
+
+const loadAccountsPayable = () => loadOpenDocuments("/api/alegra/bills-payable", "ap");
+const loadAccountsReceivable = () => loadOpenDocuments("/api/alegra/invoices-receivable", "ar");
+
+const VIEW_PANELS = { movements: "movements-panel", ap: "ap-panel", ar: "ar-panel" };
 
 document.querySelectorAll(".tab").forEach((tab) => {
   tab.addEventListener("click", () => {
     document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
     tab.classList.add("active");
 
-    if (tab.dataset.view === "ap") {
-      document.getElementById("movements-panel").hidden = true;
-      document.getElementById("ap-panel").hidden = false;
-      loadAccountsPayable();
-      return;
+    const view = tab.dataset.view;
+    for (const [key, panelId] of Object.entries(VIEW_PANELS)) {
+      document.getElementById(panelId).hidden = key !== view;
     }
 
-    document.getElementById("movements-panel").hidden = false;
-    document.getElementById("ap-panel").hidden = true;
+    if (view === "ap") return loadAccountsPayable();
+    if (view === "ar") return loadAccountsReceivable();
+
     state.status = tab.dataset.status;
     state.direction = tab.dataset.direction;
     loadMovements();

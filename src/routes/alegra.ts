@@ -53,6 +53,17 @@ alegraRouter.get("/bills-payable", async (_req, res) => {
   }
 });
 
+alegraRouter.get("/invoices-receivable", async (_req, res) => {
+  try {
+    const invoices = await alegraClient.getAllOpenInvoices();
+    const movements = pendingMovements("credito");
+    const withMatch = invoices.map((i) => ({ ...i, hasBankMatch: findStrongBankMatch(i, movements) }));
+    res.json(withMatch);
+  } catch (err: any) {
+    res.status(502).json({ error: "No se pudieron consultar las cuentas por cobrar", detail: err.response?.data ?? err.message });
+  }
+});
+
 alegraRouter.get("/contacts/:id/bills", async (req, res) => {
   try {
     res.json(await alegraClient.getPendingBills(req.params.id));

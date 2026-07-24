@@ -29,6 +29,7 @@
     <button class="tab" data-view="movements" data-status="processed" data-direction="">Procesados</button>
     <button class="tab" data-view="movements" data-status="ignored" data-direction="">Ignorados</button>
     <button class="tab" data-view="ap">Cuentas por Pagar (Alegra)</button>
+    <button class="tab" data-view="ar">Cuentas por Cobrar (Alegra)</button>
   </nav>
 
   <section class="panel" id="movements-panel">
@@ -72,6 +73,31 @@
     </table>
     <p id="ap-empty-hint" class="hint" hidden>No hay cuentas por pagar abiertas.</p>
     <p id="ap-error" class="error"></p>
+  </section>
+
+  <section class="panel" id="ar-panel" hidden>
+    <p class="hint">Facturas de venta abiertas en Alegra (todos los clientes), en vivo.</p>
+    <table id="ar-table">
+      <thead>
+        <tr>
+          <th>Cliente</th>
+          <th>Número</th>
+          <th>Fecha</th>
+          <th>Vencimiento</th>
+          <th>Total</th>
+          <th>Saldo</th>
+        </tr>
+      </thead>
+      <tbody id="ar-body"></tbody>
+      <tfoot>
+        <tr>
+          <td colspan="5"><strong>Total por cobrar</strong></td>
+          <td id="ar-total"><strong></strong></td>
+        </tr>
+      </tfoot>
+    </table>
+    <p id="ar-empty-hint" class="hint" hidden>No hay cuentas por cobrar abiertas.</p>
+    <p id="ar-error" class="error"></p>
   </section>
 
   <div id="modal-backdrop" class="modal-backdrop" hidden>
