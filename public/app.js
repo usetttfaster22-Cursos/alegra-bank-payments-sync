@@ -156,8 +156,46 @@ function openModal(row) {
   document.getElementById("documents-body").innerHTML = "";
   document.getElementById("observations-input").value = "";
   document.getElementById("modal-error").textContent = "";
+  document.getElementById("suggestions-section").hidden = true;
+  document.getElementById("suggestions-list").innerHTML = "";
 
   loadSelectOptions();
+  loadSuggestions(row);
+}
+
+async function loadSuggestions(row) {
+  const loadingEl = document.getElementById("suggestions-loading");
+  loadingEl.textContent = "Buscando sugerencias...";
+  let suggestions = [];
+  try {
+    suggestions = await api(`/api/movements/${row.id}/suggestions`);
+  } catch (err) {
+    loadingEl.textContent = "";
+    return;
+  }
+  loadingEl.textContent = "";
+
+  if (!suggestions.length) return;
+
+  const section = document.getElementById("suggestions-section");
+  const list = document.getElementById("suggestions-list");
+  section.hidden = false;
+  list.innerHTML = "";
+
+  for (const s of suggestions) {
+    const badges = [
+      s.matchedByName ? "nombre" : null,
+      s.matchedByAmount ? "monto exacto" : null,
+      s.matchedByDate ? "fecha cercana" : null,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+
+    const li = document.createElement("li");
+    li.innerHTML = `<strong>${s.contactName}</strong> — ${s.numberTemplate ?? s.documentId} · ${s.date ?? ""} · ${fmtMoney(s.balance)}<br><span class="hint">${badges}</span>`;
+    li.onclick = () => selectContact({ id: s.contactId, name: s.contactName });
+    list.appendChild(li);
+  }
 }
 
 document.getElementById("modal-close").onclick = () => {

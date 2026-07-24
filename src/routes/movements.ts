@@ -3,6 +3,7 @@ import multer from "multer";
 import { db, BankMovementRow } from "../db";
 import { parseBankStatement } from "../bankStatementParser";
 import { alegraClient } from "../alegraClient";
+import { suggestMatches } from "../matching";
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
 
@@ -62,6 +63,22 @@ movementsRouter.get("/:id", (req, res) => {
   const row = db.prepare("SELECT * FROM bank_movements WHERE id = ?").get(req.params.id) as BankMovementRow | undefined;
   if (!row) return res.status(404).json({ error: "Movimiento no encontrado" });
   res.json(row);
+});
+
+movementsRouter.get("/:id/suggestions", async (req, res) => {
+  const row = db.prepare("SELECT * FROM bank_movements WHERE id = ?").get(req.params.id) as BankMovementRow | undefined;
+  if (!row) return res.status(404).json({ error: "Movimiento no encontrado" });
+
+  const amount = row.direction === "debito" ? row.debito : row.credito;
+  if (amount === null) return res.json([]);
+
+  try {
+    const candidates = row.direction === "debito" ? await alegraClient.getAllOpenBills() : await alegraClient.getAllOpenInvoices();
+    const suggestions = suggestMatches({ descripcion: row.descripcion, fecha: row.fecha, amount }, candidates);
+    res.json(suggestions);
+  } catch (err: any) {
+    res.status(502).json({ error: "No se pudieron calcular sugerencias", detail: err.response?.data ?? err.message });
+  }
 });
 
 movementsRouter.post("/:id/ignore", (req, res) => {

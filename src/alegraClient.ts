@@ -29,6 +29,11 @@ export interface AlegraPendingDocument {
   balance: number;
 }
 
+export interface AlegraOpenDocument extends AlegraPendingDocument {
+  contactId: string;
+  contactName: string;
+}
+
 export interface AlegraBankAccount {
   id: string;
   name: string;
@@ -109,12 +114,32 @@ export class AlegraClient {
   }
 
   /** Todas las facturas de compra abiertas (cuentas por pagar), de todos los proveedores. */
-  async getAllOpenBills(): Promise<(AlegraPendingDocument & { contactName: string })[]> {
+  async getAllOpenBills(): Promise<AlegraOpenDocument[]> {
+    return this.cached("bills", () => this.fetchAllOpen("/bills"));
+  }
+
+  /** Todas las facturas de venta abiertas (cuentas por cobrar), de todos los clientes. */
+  async getAllOpenInvoices(): Promise<AlegraOpenDocument[]> {
+    return this.cached("invoices", () => this.fetchAllOpen("/invoices"));
+  }
+
+  private cacheStore = new Map<string, { at: number; data: AlegraOpenDocument[] }>();
+
+  private async cached(key: string, fetcher: () => Promise<AlegraOpenDocument[]>): Promise<AlegraOpenDocument[]> {
+    const ttlMs = 60_000;
+    const hit = this.cacheStore.get(key);
+    if (hit && Date.now() - hit.at < ttlMs) return hit.data;
+    const data = await fetcher();
+    this.cacheStore.set(key, { at: Date.now(), data });
+    return data;
+  }
+
+  private async fetchAllOpen(path: "/bills" | "/invoices"): Promise<AlegraOpenDocument[]> {
     const limit = 30;
     let start = 0;
     const all: any[] = [];
     while (true) {
-      const { data } = await this.http.get("/bills", { params: { status: "open", limit, start } });
+      const { data } = await this.http.get(path, { params: { status: "open", limit, start } });
       const page = data as any[];
       all.push(...page);
       if (page.length < limit) break;
@@ -122,6 +147,7 @@ export class AlegraClient {
     }
     return all.map((b) => ({
       id: String(b.id),
+      contactId: String(b.client?.id ?? b.provider?.id ?? ""),
       contactName: b.client?.name ?? b.provider?.name ?? "—",
       numberTemplate: b.numberTemplate?.fullNumber ?? b.numberTemplate?.number,
       date: b.date,
