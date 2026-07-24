@@ -5,6 +5,7 @@ const state = {
   selectedContact: null,
   bankAccounts: [],
   costCenters: [],
+  movementsCache: [],
 };
 
 const fmtMoney = (n) => (n === null || n === undefined ? "-" : Number(n).toLocaleString("en-US", { style: "currency", currency: "USD" }));
@@ -26,7 +27,12 @@ async function loadMovements() {
   if (state.status) params.set("status", state.status);
   if (state.direction) params.set("direction", state.direction);
   const rows = await api(`/api/movements?${params}`);
+  state.movementsCache = rows;
+  document.getElementById("movements-filter").value = "";
+  renderMovements(rows);
+}
 
+function renderMovements(rows) {
   const tbody = document.getElementById("movements-body");
   tbody.innerHTML = "";
   document.getElementById("empty-hint").hidden = rows.length > 0;
@@ -64,6 +70,23 @@ async function loadMovements() {
   }
 }
 
+document.getElementById("movements-filter").addEventListener("input", (e) => {
+  const term = e.target.value.trim().toLowerCase();
+  if (!term) {
+    renderMovements(state.movementsCache);
+    return;
+  }
+  const filtered = state.movementsCache.filter((row) => {
+    const amount = row.direction === "debito" ? row.debito : row.credito;
+    const haystack = [row.fecha, row.descripcion, amount, row.alegra_contact_name, row.status]
+      .filter((v) => v !== null && v !== undefined)
+      .join(" ")
+      .toLowerCase();
+    return haystack.includes(term);
+  });
+  renderMovements(filtered);
+});
+
 async function loadAccountsPayable() {
   const tbody = document.getElementById("ap-body");
   const errorEl = document.getElementById("ap-error");
@@ -86,6 +109,8 @@ async function loadAccountsPayable() {
   for (const doc of rows) {
     total += doc.balance;
     const tr = document.createElement("tr");
+    if (doc.hasBankMatch) tr.className = "row-matched";
+    tr.title = doc.hasBankMatch ? "Ya se detectó un movimiento bancario pendiente que parece pagar esta factura" : "";
     tr.innerHTML = `
       <td>${doc.contactName}</td>
       <td>${doc.numberTemplate ?? doc.id}</td>

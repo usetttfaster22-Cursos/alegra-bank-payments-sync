@@ -1,7 +1,20 @@
 import { Router } from "express";
 import { alegraClient } from "../alegraClient";
+import { db, BankMovementRow } from "../db";
+import { findStrongBankMatch } from "../matching";
 
 export const alegraRouter = Router();
+
+function pendingMovements(direction: "debito" | "credito") {
+  const rows = db
+    .prepare("SELECT * FROM bank_movements WHERE status = 'pending' AND direction = ?")
+    .all(direction) as BankMovementRow[];
+  return rows.map((r) => ({
+    descripcion: r.descripcion,
+    fecha: r.fecha,
+    amount: (direction === "debito" ? r.debito : r.credito) ?? 0,
+  }));
+}
 
 alegraRouter.get("/contacts", async (req, res) => {
   const q = typeof req.query.q === "string" ? req.query.q : "";
@@ -31,7 +44,10 @@ alegraRouter.get("/cost-centers", async (_req, res) => {
 
 alegraRouter.get("/bills-payable", async (_req, res) => {
   try {
-    res.json(await alegraClient.getAllOpenBills());
+    const bills = await alegraClient.getAllOpenBills();
+    const movements = pendingMovements("debito");
+    const withMatch = bills.map((b) => ({ ...b, hasBankMatch: findStrongBankMatch(b, movements) }));
+    res.json(withMatch);
   } catch (err: any) {
     res.status(502).json({ error: "No se pudieron consultar las cuentas por pagar", detail: err.response?.data ?? err.message });
   }

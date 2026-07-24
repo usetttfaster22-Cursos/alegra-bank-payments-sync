@@ -62,11 +62,26 @@ button.small { padding: 4px 10px; font-size: 13px; }
 
 .file-label { display: inline-flex; align-items: center; gap: 8px; }
 
+.filter-input {
+  width: 100%;
+  padding: 8px 10px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+tr.row-matched {
+  font-weight: 700;
+  background: #fff3cd;
+}
+
 .modal-backdrop {
   position: fixed; inset: 0; background: rgba(0,0,0,0.4);
   display: flex; align-items: flex-start; justify-content: center;
   padding: 40px 16px; overflow-y: auto;
 }
+.modal-backdrop[hidden] { display: none; }
 .modal {
   background: var(--panel); border-radius: 10px; padding: 24px;
   width: 100%; max-width: 640px; position: relative;
@@ -89,4 +104,3 @@ button.small { padding: 4px 10px; font-size: 13px; }
 .badge.pending { background: #fff3cd; color: #8a6100; }
 .badge.processed { background: #d3f4dd; color: #14683a; }
 .badge.ignored { background: #eee; color: #666; }
-.modal-backdrop[hidden] { display: none; }
