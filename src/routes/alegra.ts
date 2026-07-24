@@ -29,6 +29,14 @@ alegraRouter.get("/cost-centers", async (_req, res) => {
   }
 });
 
+alegraRouter.get("/bills-payable", async (_req, res) => {
+  try {
+    res.json(await alegraClient.getAllOpenBills());
+  } catch (err: any) {
+    res.status(502).json({ error: "No se pudieron consultar las cuentas por pagar", detail: err.response?.data ?? err.message });
+  }
+});
+
 alegraRouter.get("/contacts/:id/bills", async (req, res) => {
   try {
     res.json(await alegraClient.getPendingBills(req.params.id));

@@ -24,13 +24,14 @@
   </section>
 
   <nav class="tabs">
-    <button class="tab active" data-status="pending" data-direction="debito">Pendientes · Proveedores</button>
-    <button class="tab" data-status="pending" data-direction="credito">Pendientes · Clientes</button>
-    <button class="tab" data-status="processed" data-direction="">Procesados</button>
-    <button class="tab" data-status="ignored" data-direction="">Ignorados</button>
+    <button class="tab active" data-view="movements" data-status="pending" data-direction="debito">Pendientes · Proveedores</button>
+    <button class="tab" data-view="movements" data-status="pending" data-direction="credito">Pendientes · Clientes</button>
+    <button class="tab" data-view="movements" data-status="processed" data-direction="">Procesados</button>
+    <button class="tab" data-view="movements" data-status="ignored" data-direction="">Ignorados</button>
+    <button class="tab" data-view="ap">Cuentas por Pagar (Alegra)</button>
   </nav>
 
-  <section class="panel">
+  <section class="panel" id="movements-panel">
     <table id="movements-table">
       <thead>
         <tr>
@@ -45,6 +46,31 @@
       <tbody id="movements-body"></tbody>
     </table>
     <p id="empty-hint" class="hint" hidden>No hay movimientos en esta vista.</p>
+  </section>
+
+  <section class="panel" id="ap-panel" hidden>
+    <p class="hint">Facturas de compra abiertas en Alegra (todos los proveedores), en vivo.</p>
+    <table id="ap-table">
+      <thead>
+        <tr>
+          <th>Proveedor</th>
+          <th>Número</th>
+          <th>Fecha</th>
+          <th>Vencimiento</th>
+          <th>Total</th>
+          <th>Saldo</th>
+        </tr>
+      </thead>
+      <tbody id="ap-body"></tbody>
+      <tfoot>
+        <tr>
+          <td colspan="5"><strong>Total por pagar</strong></td>
+          <td id="ap-total"><strong></strong></td>
+        </tr>
+      </tfoot>
+    </table>
+    <p id="ap-empty-hint" class="hint" hidden>No hay cuentas por pagar abiertas.</p>
+    <p id="ap-error" class="error"></p>
   </section>
 
   <div id="modal-backdrop" class="modal-backdrop" hidden>

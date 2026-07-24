@@ -64,10 +64,55 @@ async function loadMovements() {
   }
 }
 
+async function loadAccountsPayable() {
+  const tbody = document.getElementById("ap-body");
+  const errorEl = document.getElementById("ap-error");
+  tbody.innerHTML = "";
+  errorEl.textContent = "";
+
+  let rows;
+  try {
+    rows = await api("/api/alegra/bills-payable");
+  } catch (err) {
+    errorEl.textContent = err.message;
+    document.getElementById("ap-empty-hint").hidden = true;
+    document.getElementById("ap-total").textContent = "";
+    return;
+  }
+
+  document.getElementById("ap-empty-hint").hidden = rows.length > 0;
+
+  let total = 0;
+  for (const doc of rows) {
+    total += doc.balance;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${doc.contactName}</td>
+      <td>${doc.numberTemplate ?? doc.id}</td>
+      <td>${doc.date ?? ""}</td>
+      <td>${doc.dueDate ?? ""}</td>
+      <td>${fmtMoney(doc.total)}</td>
+      <td>${fmtMoney(doc.balance)}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+  document.getElementById("ap-total").textContent = fmtMoney(total);
+}
+
 document.querySelectorAll(".tab").forEach((tab) => {
   tab.addEventListener("click", () => {
     document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
     tab.classList.add("active");
+
+    if (tab.dataset.view === "ap") {
+      document.getElementById("movements-panel").hidden = true;
+      document.getElementById("ap-panel").hidden = false;
+      loadAccountsPayable();
+      return;
+    }
+
+    document.getElementById("movements-panel").hidden = false;
+    document.getElementById("ap-panel").hidden = true;
     state.status = tab.dataset.status;
     state.direction = tab.dataset.direction;
     loadMovements();

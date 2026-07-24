@@ -108,6 +108,29 @@ export class AlegraClient {
     }));
   }
 
+  /** Todas las facturas de compra abiertas (cuentas por pagar), de todos los proveedores. */
+  async getAllOpenBills(): Promise<(AlegraPendingDocument & { contactName: string })[]> {
+    const limit = 30;
+    let start = 0;
+    const all: any[] = [];
+    while (true) {
+      const { data } = await this.http.get("/bills", { params: { status: "open", limit, start } });
+      const page = data as any[];
+      all.push(...page);
+      if (page.length < limit) break;
+      start += limit;
+    }
+    return all.map((b) => ({
+      id: String(b.id),
+      contactName: b.client?.name ?? b.provider?.name ?? "—",
+      numberTemplate: b.numberTemplate?.fullNumber ?? b.numberTemplate?.number,
+      date: b.date,
+      dueDate: b.dueDate,
+      total: Number(b.total),
+      balance: Number(b.balance ?? b.total),
+    }));
+  }
+
   /** Facturas de venta (cliente) pendientes de cobro para un contacto. */
   async getPendingInvoices(contactId: string): Promise<AlegraPendingDocument[]> {
     const { data } = await this.http.get("/invoices", {
