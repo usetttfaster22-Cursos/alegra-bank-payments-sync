@@ -76,6 +76,19 @@ tr.row-matched {
   background: #fff3cd;
 }
 
+tr.row-duplicate {
+  color: var(--muted);
+  background: #eee;
+  text-decoration: line-through;
+}
+
+.badge.duplicate {
+  background: #f8d7da;
+  color: #842029;
+  text-decoration: none;
+  display: inline-block;
+}
+
 .modal-backdrop {
   position: fixed; inset: 0; background: rgba(0,0,0,0.4);
   display: flex; align-items: flex-start; justify-content: center;

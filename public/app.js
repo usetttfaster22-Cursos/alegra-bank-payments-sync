@@ -40,11 +40,16 @@ function renderMovements(rows) {
   for (const row of rows) {
     const amount = row.direction === "debito" ? row.debito : row.credito;
     const tr = document.createElement("tr");
-    if (row.hasAlegraMatch) tr.className = "row-matched";
-    tr.title = row.hasAlegraMatch ? "Ya se detectó una factura abierta en Alegra que parece coincidir" : "";
+    if (row.alreadyInAlegra) {
+      tr.className = "row-duplicate";
+      tr.title = "Ya existe un pago registrado en Alegra que parece coincidir con este movimiento (posible duplicado)";
+    } else if (row.hasAlegraMatch) {
+      tr.className = "row-matched";
+      tr.title = "Ya se detectó una factura abierta en Alegra que parece coincidir";
+    }
     tr.innerHTML = `
       <td>${row.fecha}</td>
-      <td>${row.descripcion ?? ""}</td>
+      <td>${row.descripcion ?? ""}${row.alreadyInAlegra ? ' <span class="badge duplicate">ya en Alegra</span>' : ""}</td>
       <td>${fmtMoney(amount)}</td>
       <td><span class="badge ${row.status}">${row.status}</span></td>
       <td>${row.alegra_contact_name ?? "-"}</td>

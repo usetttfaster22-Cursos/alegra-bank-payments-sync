@@ -9,6 +9,9 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 
 
 export const movementsRouter = Router();
 
+// Desde cuándo revisamos los pagos ya registrados en Alegra para detectar duplicados.
+const PAYMENTS_LOOKBACK_SINCE = process.env.PAYMENTS_LOOKBACK_SINCE || "2026-01-01";
+
 movementsRouter.post("/import", upload.single("file"), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "Falta el archivo (campo 'file')." });
@@ -59,11 +62,19 @@ movementsRouter.get("/", async (req, res) => {
 
   if (status === "pending" && (direction === "debito" || direction === "credito")) {
     try {
-      const candidates = direction === "debito" ? await alegraClient.getAllOpenBills() : await alegraClient.getAllOpenInvoices();
+      const openCandidates = direction === "debito" ? await alegraClient.getAllOpenBills() : await alegraClient.getAllOpenInvoices();
+      const paymentType = direction === "debito" ? "out" : "in";
+      const registeredPayments = await alegraClient.getPaymentsSince(PAYMENTS_LOOKBACK_SINCE, paymentType);
+
       const withMatch = rows.map((r) => {
         const amount = direction === "debito" ? r.debito : r.credito;
-        const hasAlegraMatch = amount !== null && hasStrongAlegraMatch({ descripcion: r.descripcion, fecha: r.fecha, amount }, candidates);
-        return { ...r, hasAlegraMatch };
+        if (amount === null) return { ...r, hasAlegraMatch: false, alreadyInAlegra: false };
+        const movement = { descripcion: r.descripcion, fecha: r.fecha, amount };
+        return {
+          ...r,
+          hasAlegraMatch: hasStrongAlegraMatch(movement, openCandidates),
+          alreadyInAlegra: hasStrongAlegraMatch(movement, registeredPayments),
+        };
       });
       return res.json(withMatch);
     } catch {
