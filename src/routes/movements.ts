@@ -4,6 +4,7 @@ import { db, BankMovementRow } from "../db";
 import { parseBankStatement } from "../bankStatementParser";
 import { alegraClient } from "../alegraClient";
 import { suggestMatches, hasStrongAlegraMatch } from "../matching";
+import { syncRecentPayments, getCachedPayments } from "../paymentsSync";
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
 
@@ -64,7 +65,8 @@ movementsRouter.get("/", async (req, res) => {
     try {
       const openCandidates = direction === "debito" ? await alegraClient.getAllOpenBills() : await alegraClient.getAllOpenInvoices();
       const paymentType = direction === "debito" ? "out" : "in";
-      const registeredPayments = await alegraClient.getPaymentsSince(PAYMENTS_LOOKBACK_SINCE, paymentType);
+      await syncRecentPayments(PAYMENTS_LOOKBACK_SINCE);
+      const registeredPayments = getCachedPayments(PAYMENTS_LOOKBACK_SINCE, paymentType);
 
       const withMatch = rows.map((r) => {
         const amount = direction === "debito" ? r.debito : r.credito;
@@ -77,8 +79,9 @@ movementsRouter.get("/", async (req, res) => {
         };
       });
       return res.json(withMatch);
-    } catch {
-      // Si falla la consulta a Alegra, seguimos mostrando los movimientos sin el resaltado.
+    } catch (err: any) {
+      // eslint-disable-next-line no-console
+      console.error("[GET /api/movements] Fallo consultando Alegra, se muestran los movimientos sin resaltado:", err.response?.data ?? err.message);
     }
   }
 
@@ -180,6 +183,8 @@ movementsRouter.post("/:id/match", async (req, res) => {
     res.json({ ok: true, dryRun: result.dryRun, alegraPaymentId: result.id, payload: result.payload });
   } catch (err: any) {
     const detail = err.response?.data ?? err.message;
+    // eslint-disable-next-line no-console
+    console.error("[POST /api/movements/:id/match]", detail);
     res.status(502).json({ error: "Error al crear el pago en Alegra", detail });
   }
 });

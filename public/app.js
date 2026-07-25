@@ -17,7 +17,8 @@ async function api(path, options = {}) {
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.error || `Error ${res.status}`);
+    const detail = body.detail ? ` — ${typeof body.detail === "string" ? body.detail : JSON.stringify(body.detail)}` : "";
+    throw new Error((body.error || `Error ${res.status}`) + detail);
   }
   return res.json();
 }
@@ -330,6 +331,11 @@ document.getElementById("submit-match").addEventListener("click", async () => {
 
   if (!state.selectedContact) {
     errorEl.textContent = "Selecciona un contacto de Alegra.";
+    return;
+  }
+
+  if (!document.getElementById("bank-account-select").value) {
+    errorEl.textContent = "Selecciona una cuenta bancaria (la lista puede seguir cargando, espera un momento e intenta de nuevo).";
     return;
   }
 

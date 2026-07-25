@@ -157,57 +157,16 @@ export class AlegraClient {
     }));
   }
 
-  private paymentsCache: { at: number; key: string; data: AlegraOpenDocument[] } | null = null;
-
   /**
-   * Pagos ya registrados en Alegra desde `sinceDate`, del tipo indicado
-   * ("out" = pagos a proveedores, "in" = cobros de clientes), devueltos con
-   * la misma forma que AlegraOpenDocument para reutilizar la lógica de
-   * comparación. Se pide el listado ordenado por fecha descendente y se para
-   * de paginar en cuanto aparece un pago anterior a `sinceDate` (no
-   * encontramos un filtro de fecha que funcione en la API, pero el orden
-   * descendente sí).
+   * Trae una página cruda de /payments, ordenada por fecha descendente (la
+   * sincronización incremental hacia la base de datos local vive en
+   * paymentsSync.ts, que usa este método para paginar).
    */
-  async getPaymentsSince(sinceDate: string, type: "in" | "out"): Promise<AlegraOpenDocument[]> {
-    const cacheKey = `${sinceDate}:${type}`;
-    const ttlMs = 60_000;
-    if (this.paymentsCache && this.paymentsCache.key === cacheKey && Date.now() - this.paymentsCache.at < ttlMs) {
-      return this.paymentsCache.data;
-    }
-
-    const limit = 30;
-    let start = 0;
-    const collected: AlegraOpenDocument[] = [];
-    while (true) {
-      const { data } = await this.http.get("/payments", {
-        params: { order_field: "date", order_direction: "DESC", limit, start },
-      });
-      const page = data as any[];
-      if (page.length === 0) break;
-
-      let hitOlder = false;
-      for (const p of page) {
-        if (p.date < sinceDate) {
-          hitOlder = true;
-          break;
-        }
-        if (p.type !== type) continue;
-        collected.push({
-          id: String(p.id),
-          contactId: String(p.client?.id ?? ""),
-          contactName: p.client?.name ?? "—",
-          numberTemplate: p.numberTemplate?.fullNumber ?? p.number,
-          date: p.date,
-          total: Number(p.amount),
-          balance: Number(p.amount),
-        });
-      }
-      if (hitOlder || page.length < limit) break;
-      start += limit;
-    }
-
-    this.paymentsCache = { at: Date.now(), key: cacheKey, data: collected };
-    return collected;
+  async fetchPaymentsPage(start: number, limit = 30): Promise<any[]> {
+    const { data } = await this.http.get("/payments", {
+      params: { order_field: "date", order_direction: "DESC", limit, start },
+    });
+    return data as any[];
   }
 
   /** Facturas de venta (cliente) pendientes de cobro para un contacto. */

@@ -33,6 +33,22 @@ db.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_bank_movements_status ON bank_movements(status);
   CREATE INDEX IF NOT EXISTS idx_bank_movements_direction ON bank_movements(direction);
+
+  CREATE TABLE IF NOT EXISTS alegra_payments (
+    id TEXT PRIMARY KEY,
+    date TEXT NOT NULL,
+    type TEXT NOT NULL CHECK (type IN ('in','out')),
+    amount REAL NOT NULL,
+    contact_id TEXT,
+    contact_name TEXT,
+    number TEXT
+  );
+  CREATE INDEX IF NOT EXISTS idx_alegra_payments_type_date ON alegra_payments(type, date);
+
+  CREATE TABLE IF NOT EXISTS sync_state (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  );
 `);
 
 export interface BankMovementRow {
