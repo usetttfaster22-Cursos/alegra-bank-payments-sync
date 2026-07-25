@@ -3,6 +3,7 @@ import express from "express";
 import path from "node:path";
 import { movementsRouter } from "./routes/movements";
 import { alegraRouter } from "./routes/alegra";
+import { dashboardRouter } from "./routes/dashboard";
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3000);
@@ -30,6 +31,7 @@ app.use(express.static(path.join(__dirname, "..", "public")));
 
 app.use("/api/movements", movementsRouter);
 app.use("/api/alegra", alegraRouter);
+app.use("/api/dashboard", dashboardRouter);
 
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 

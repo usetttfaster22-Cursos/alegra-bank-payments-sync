@@ -135,7 +135,57 @@ async function loadOpenDocuments(endpoint, prefix) {
 const loadAccountsPayable = () => loadOpenDocuments("/api/alegra/bills-payable", "ap");
 const loadAccountsReceivable = () => loadOpenDocuments("/api/alegra/invoices-receivable", "ar");
 
-const VIEW_PANELS = { movements: "movements-panel", ap: "ap-panel", ar: "ar-panel" };
+function statCard(label, value, sub) {
+  return `<div class="stat-card"><div class="stat-label">${label}</div><div class="stat-value">${value}</div>${sub ? `<div class="stat-sub">${sub}</div>` : ""}</div>`;
+}
+
+function renderTopTable(tbodyId, rows) {
+  const tbody = document.getElementById(tbodyId);
+  tbody.innerHTML = rows.length
+    ? rows.map((r) => `<tr><td>${r.contactName}</td><td>${fmtMoney(r.total)}</td></tr>`).join("")
+    : `<tr><td colspan="2" class="hint">Sin datos</td></tr>`;
+}
+
+function renderMissingTable(tbodyId, emptyId, rows) {
+  const tbody = document.getElementById(tbodyId);
+  document.getElementById(emptyId).hidden = rows.length > 0;
+  tbody.innerHTML = rows
+    .map((r) => `<tr><td>${r.fecha}</td><td>${r.descripcion ?? ""}</td><td>${fmtMoney(r.monto)}</td></tr>`)
+    .join("");
+}
+
+async function loadDashboard() {
+  const errorEl = document.getElementById("dashboard-error");
+  const loadingEl = document.getElementById("dashboard-loading");
+  errorEl.textContent = "";
+  loadingEl.hidden = false;
+
+  let data;
+  try {
+    data = await api("/api/dashboard");
+  } catch (err) {
+    errorEl.textContent = err.message;
+    loadingEl.hidden = true;
+    return;
+  }
+  loadingEl.hidden = true;
+
+  document.getElementById("dashboard-stats").innerHTML = [
+    statCard("Por pagar", fmtMoney(data.accountsPayable.total), `${data.accountsPayable.count} facturas · ${data.accountsPayable.overdue.count} vencidas (${fmtMoney(data.accountsPayable.overdue.total)})`),
+    statCard("Por cobrar", fmtMoney(data.accountsReceivable.total), `${data.accountsReceivable.count} facturas · ${data.accountsReceivable.overdue.count} vencidas (${fmtMoney(data.accountsReceivable.overdue.total)})`),
+    statCard("Pendientes · Proveedores", data.movements.pendingProviders, `${data.movements.suggestedProviders} con sugerencia · ${data.movements.duplicatesProviders} ya en Alegra`),
+    statCard("Pendientes · Clientes", data.movements.pendingClients, `${data.movements.suggestedClients} con sugerencia · ${data.movements.duplicatesClients} ya en Alegra`),
+    statCard("Facturas faltantes proveedores", data.missingProviderInvoices.length),
+    statCard("Facturas faltantes clientes", data.missingClientInvoices.length),
+  ].join("");
+
+  renderTopTable("dashboard-top-providers", data.accountsPayable.top);
+  renderTopTable("dashboard-top-clients", data.accountsReceivable.top);
+  renderMissingTable("dashboard-missing-providers", "dashboard-missing-providers-empty", data.missingProviderInvoices);
+  renderMissingTable("dashboard-missing-clients", "dashboard-missing-clients-empty", data.missingClientInvoices);
+}
+
+const VIEW_PANELS = { dashboard: "dashboard-panel", movements: "movements-panel", ap: "ap-panel", ar: "ar-panel" };
 
 document.querySelectorAll(".tab").forEach((tab) => {
   tab.addEventListener("click", () => {
@@ -147,6 +197,7 @@ document.querySelectorAll(".tab").forEach((tab) => {
       document.getElementById(panelId).hidden = key !== view;
     }
 
+    if (view === "dashboard") return loadDashboard();
     if (view === "ap") return loadAccountsPayable();
     if (view === "ar") return loadAccountsReceivable();
 

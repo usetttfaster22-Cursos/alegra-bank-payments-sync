@@ -117,3 +117,30 @@ tr.row-duplicate {
 .badge.pending { background: #fff3cd; color: #8a6100; }
 .badge.processed { background: #d3f4dd; color: #14683a; }
 .badge.ignored { background: #eee; color: #666; }
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+}
+.stat-card .stat-label { font-size: 12px; color: var(--muted); }
+.stat-card .stat-value { font-size: 22px; font-weight: 700; margin-top: 4px; }
+.stat-card .stat-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+.dashboard-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+h3 { font-size: 15px; margin: 20px 0 8px; }
+
+.compact-table { font-size: 13px; }
+.compact-table th, .compact-table td { padding: 6px 8px; }

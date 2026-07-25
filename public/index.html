@@ -24,6 +24,7 @@
   </section>
 
   <nav class="tabs">
+    <button class="tab" data-view="dashboard">Dashboard</button>
     <button class="tab active" data-view="movements" data-status="pending" data-direction="debito">Pendientes · Proveedores</button>
     <button class="tab" data-view="movements" data-status="pending" data-direction="credito">Pendientes · Clientes</button>
     <button class="tab" data-view="movements" data-status="processed" data-direction="">Procesados</button>
@@ -31,6 +32,46 @@
     <button class="tab" data-view="ap">Cuentas por Pagar (Alegra)</button>
     <button class="tab" data-view="ar">Cuentas por Cobrar (Alegra)</button>
   </nav>
+
+  <section class="panel" id="dashboard-panel" hidden>
+    <p id="dashboard-error" class="error"></p>
+    <p id="dashboard-loading" class="hint">Cargando...</p>
+
+    <div class="stat-grid" id="dashboard-stats"></div>
+
+    <div class="dashboard-columns">
+      <div>
+        <h3>Top 5 proveedores por saldo</h3>
+        <table class="compact-table">
+          <thead><tr><th>Proveedor</th><th>Saldo</th></tr></thead>
+          <tbody id="dashboard-top-providers"></tbody>
+        </table>
+      </div>
+      <div>
+        <h3>Top 5 clientes por saldo</h3>
+        <table class="compact-table">
+          <thead><tr><th>Cliente</th><th>Saldo</th></tr></thead>
+          <tbody id="dashboard-top-clients"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <h3>Facturas faltantes de proveedores</h3>
+    <p class="hint">Movimientos pendientes que pagamos pero que no coinciden con ninguna factura ni pago registrado en Alegra — probablemente falta pedirle la factura al proveedor.</p>
+    <table class="compact-table">
+      <thead><tr><th>Fecha</th><th>Descripción</th><th>Monto</th></tr></thead>
+      <tbody id="dashboard-missing-providers"></tbody>
+    </table>
+    <p id="dashboard-missing-providers-empty" class="hint" hidden>No hay movimientos sin factura de proveedor.</p>
+
+    <h3>Facturas faltantes de clientes</h3>
+    <p class="hint">Cobros pendientes que no coinciden con ninguna factura de venta ni cobro registrado en Alegra.</p>
+    <table class="compact-table">
+      <thead><tr><th>Fecha</th><th>Descripción</th><th>Monto</th></tr></thead>
+      <tbody id="dashboard-missing-clients"></tbody>
+    </table>
+    <p id="dashboard-missing-clients-empty" class="hint" hidden>No hay cobros sin factura de cliente.</p>
+  </section>
 
   <section class="panel" id="movements-panel">
     <input type="text" id="movements-filter" class="filter-input" placeholder="Filtrar por fecha, descripción, monto o contacto..." />

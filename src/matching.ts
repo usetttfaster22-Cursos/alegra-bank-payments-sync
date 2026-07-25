@@ -101,8 +101,14 @@ export function suggestMatches(movement: MovementLike, candidates: AlegraOpenDoc
     .slice(0, 5);
 }
 
+/**
+ * El monto siempre tiene que coincidir exacto para considerarla una coincidencia
+ * fuerte, más nombre o fecha como apoyo. Sin esto, dos contactos que comparten
+ * una palabra genérica en el nombre (ej. "PROVEEDOR") podían marcarse como
+ * coincidencia solo por casualidad de fecha, con montos completamente distintos.
+ */
 function meetsStrongThreshold(s: MatchScore): boolean {
-  return [s.matchedByName, s.matchedByAmount, s.matchedByDate].filter(Boolean).length >= 2;
+  return s.matchedByAmount && (s.matchedByName || s.matchedByDate);
 }
 
 /**
@@ -122,4 +128,23 @@ export function findStrongBankMatch(doc: AlegraOpenDocument, movements: Movement
  */
 export function hasStrongAlegraMatch(movement: MovementLike, candidates: AlegraOpenDocument[]): boolean {
   return candidates.some((doc) => meetsStrongThreshold(scoreOne(movement, doc)));
+}
+
+export type MovementClassification = "duplicate" | "matched" | "missing";
+
+/**
+ * Clasifica un movimiento pendiente en:
+ *  - "duplicate": ya existe un pago registrado en Alegra que lo cubre.
+ *  - "matched": coincide con una factura abierta (lista para procesar).
+ *  - "missing": no coincide con nada — pagamos/cobramos pero no hay factura
+ *    de por medio en Alegra (útil para saber qué facturas faltan pedir).
+ */
+export function classifyMovement(
+  movement: MovementLike,
+  openDocs: AlegraOpenDocument[],
+  registeredPayments: AlegraOpenDocument[]
+): MovementClassification {
+  if (hasStrongAlegraMatch(movement, registeredPayments)) return "duplicate";
+  if (hasStrongAlegraMatch(movement, openDocs)) return "matched";
+  return "missing";
 }
