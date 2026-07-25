@@ -136,13 +136,25 @@ export class AlegraClient {
 
   private async fetchAllOpen(path: "/bills" | "/invoices"): Promise<AlegraOpenDocument[]> {
     const limit = 30;
+    const MAX_PAGES = 200; // cubre ~6000 facturas abiertas; evita un bucle infinito si la paginación no avanza
     let start = 0;
+    let previousFirstId: string | null = null;
     const all: any[] = [];
-    while (true) {
+    for (let page = 0; page < MAX_PAGES; page++) {
       const { data } = await this.http.get(path, { params: { status: "open", limit, start } });
-      const page = data as any[];
-      all.push(...page);
-      if (page.length < limit) break;
+      const items = data as any[];
+      if (items.length === 0) break;
+
+      const firstId = String(items[0].id);
+      if (firstId === previousFirstId) {
+        // eslint-disable-next-line no-console
+        console.warn(`[alegraClient] la paginación de ${path} no avanzó, se corta para evitar un bucle.`);
+        break;
+      }
+      previousFirstId = firstId;
+
+      all.push(...items);
+      if (items.length < limit) break;
       start += limit;
     }
     return all.map((b) => ({

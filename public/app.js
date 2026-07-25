@@ -10,6 +10,9 @@ const state = {
 
 const fmtMoney = (n) => (n === null || n === undefined ? "-" : Number(n).toLocaleString("en-US", { style: "currency", currency: "USD" }));
 
+const HTML_ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => HTML_ESCAPES[c]);
+
 async function api(path, options = {}) {
   const res = await fetch(path, {
     ...options,
@@ -49,11 +52,11 @@ function renderMovements(rows) {
       tr.title = "Ya se detectó una factura abierta en Alegra que parece coincidir";
     }
     tr.innerHTML = `
-      <td>${row.fecha}</td>
-      <td>${row.descripcion ?? ""}${row.alreadyInAlegra ? ' <span class="badge duplicate">ya en Alegra</span>' : ""}</td>
+      <td>${escapeHtml(row.fecha)}</td>
+      <td>${escapeHtml(row.descripcion ?? "")}${row.alreadyInAlegra ? ' <span class="badge duplicate">ya en Alegra</span>' : ""}</td>
       <td>${fmtMoney(amount)}</td>
-      <td><span class="badge ${row.status}">${row.status}</span></td>
-      <td>${row.alegra_contact_name ?? "-"}</td>
+      <td><span class="badge ${escapeHtml(row.status)}">${escapeHtml(row.status)}</span></td>
+      <td>${escapeHtml(row.alegra_contact_name ?? "-")}</td>
       <td></td>
     `;
     const actionsCell = tr.querySelector("td:last-child");
@@ -120,10 +123,10 @@ async function loadOpenDocuments(endpoint, prefix) {
     if (doc.hasBankMatch) tr.className = "row-matched";
     tr.title = doc.hasBankMatch ? "Ya se detectó un movimiento bancario pendiente que parece coincidir con esta factura" : "";
     tr.innerHTML = `
-      <td>${doc.contactName}</td>
-      <td>${doc.numberTemplate ?? doc.id}</td>
-      <td>${doc.date ?? ""}</td>
-      <td>${doc.dueDate ?? ""}</td>
+      <td>${escapeHtml(doc.contactName)}</td>
+      <td>${escapeHtml(doc.numberTemplate ?? doc.id)}</td>
+      <td>${escapeHtml(doc.date ?? "")}</td>
+      <td>${escapeHtml(doc.dueDate ?? "")}</td>
       <td>${fmtMoney(doc.total)}</td>
       <td>${fmtMoney(doc.balance)}</td>
     `;
@@ -142,7 +145,7 @@ function statCard(label, value, sub) {
 function renderTopTable(tbodyId, rows) {
   const tbody = document.getElementById(tbodyId);
   tbody.innerHTML = rows.length
-    ? rows.map((r) => `<tr><td>${r.contactName}</td><td>${fmtMoney(r.total)}</td></tr>`).join("")
+    ? rows.map((r) => `<tr><td>${escapeHtml(r.contactName)}</td><td>${fmtMoney(r.total)}</td></tr>`).join("")
     : `<tr><td colspan="2" class="hint">Sin datos</td></tr>`;
 }
 
@@ -150,7 +153,7 @@ function renderMissingTable(tbodyId, emptyId, rows) {
   const tbody = document.getElementById(tbodyId);
   document.getElementById(emptyId).hidden = rows.length > 0;
   tbody.innerHTML = rows
-    .map((r) => `<tr><td>${r.fecha}</td><td>${r.descripcion ?? ""}</td><td>${fmtMoney(r.monto)}</td></tr>`)
+    .map((r) => `<tr><td>${escapeHtml(r.fecha)}</td><td>${escapeHtml(r.descripcion ?? "")}</td><td>${fmtMoney(r.monto)}</td></tr>`)
     .join("");
 }
 
@@ -280,7 +283,7 @@ async function loadSuggestions(row) {
       .join(" · ");
 
     const li = document.createElement("li");
-    li.innerHTML = `<strong>${s.contactName}</strong> — ${s.numberTemplate ?? s.documentId} · ${s.date ?? ""} · ${fmtMoney(s.balance)}<br><span class="hint">${badges}</span>`;
+    li.innerHTML = `<strong>${escapeHtml(s.contactName)}</strong> — ${escapeHtml(s.numberTemplate ?? s.documentId)} · ${escapeHtml(s.date ?? "")} · ${fmtMoney(s.balance)}<br><span class="hint">${escapeHtml(badges)}</span>`;
     li.onclick = () => selectContact({ id: s.contactId, name: s.contactName });
     list.appendChild(li);
   }
@@ -306,10 +309,10 @@ async function loadSelectOptions() {
     }
   }
   const bankSelect = document.getElementById("bank-account-select");
-  bankSelect.innerHTML = state.bankAccounts.map((b) => `<option value="${b.id}">${b.name}</option>`).join("");
+  bankSelect.innerHTML = state.bankAccounts.map((b) => `<option value="${escapeHtml(b.id)}">${escapeHtml(b.name)}</option>`).join("");
   const costSelect = document.getElementById("cost-center-select");
   costSelect.innerHTML =
-    `<option value="">(ninguno)</option>` + state.costCenters.map((c) => `<option value="${c.id}">${c.name}</option>`).join("");
+    `<option value="">(ninguno)</option>` + state.costCenters.map((c) => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join("");
 }
 
 let searchTimeout;
@@ -367,10 +370,10 @@ async function selectContact(contact) {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td><input type="checkbox" class="doc-check" ${applied > 0 ? "checked" : ""} /></td>
-      <td>${doc.numberTemplate ?? doc.id}</td>
-      <td>${doc.date ?? ""}</td>
+      <td>${escapeHtml(doc.numberTemplate ?? doc.id)}</td>
+      <td>${escapeHtml(doc.date ?? "")}</td>
       <td>${fmtMoney(doc.balance)}</td>
-      <td><input type="number" class="doc-amount" step="0.01" value="${applied.toFixed(2)}" data-id="${doc.id}" data-max="${doc.balance}" /></td>
+      <td><input type="number" class="doc-amount" step="0.01" value="${applied.toFixed(2)}" data-id="${escapeHtml(doc.id)}" data-max="${doc.balance}" /></td>
     `;
     tbody.appendChild(tr);
   }

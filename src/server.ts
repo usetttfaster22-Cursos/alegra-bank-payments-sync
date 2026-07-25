@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import path from "node:path";
+import crypto from "node:crypto";
 import { movementsRouter } from "./routes/movements";
 import { alegraRouter } from "./routes/alegra";
 import { dashboardRouter } from "./routes/dashboard";
@@ -11,12 +12,20 @@ const PORT = Number(process.env.PORT ?? 3000);
 const BASIC_AUTH_USER = process.env.BASIC_AUTH_USER;
 const BASIC_AUTH_PASSWORD = process.env.BASIC_AUTH_PASSWORD;
 
+// Compara en tiempo constante (via hash de longitud fija) para no filtrar,
+// por diferencias de tiempo de respuesta, cuántos caracteres coinciden.
+function safeEqual(a: string, b: string): boolean {
+  const ah = crypto.createHash("sha256").update(a).digest();
+  const bh = crypto.createHash("sha256").update(b).digest();
+  return crypto.timingSafeEqual(ah, bh);
+}
+
 if (BASIC_AUTH_USER && BASIC_AUTH_PASSWORD) {
   app.use((req, res, next) => {
     const header = req.headers.authorization;
     if (header?.startsWith("Basic ")) {
       const [user, password] = Buffer.from(header.slice(6), "base64").toString().split(":");
-      if (user === BASIC_AUTH_USER && password === BASIC_AUTH_PASSWORD) return next();
+      if (safeEqual(user ?? "", BASIC_AUTH_USER) && safeEqual(password ?? "", BASIC_AUTH_PASSWORD)) return next();
     }
     res.set("WWW-Authenticate", 'Basic realm="alegra-bank-payments-sync"');
     res.status(401).send("Autenticación requerida");
